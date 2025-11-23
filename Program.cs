@@ -2,30 +2,39 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace LabWorkRegex
+namespace RegularExpressionLab
 {
-    // Клас для пошуку поштових індексів у тексті
+    /// <summary>
+    /// Клас для пошуку поштових індексів у тексті.
+    /// Використовує регулярні вирази для знаходження індексів у форматі 00000.
+    /// </summary>
     public class PostalCodeFinder
     {
-        // Інкапсульоване поле для збереження тексту
-        private readonly string _text;
+        // Статичний Regex для продуктивності та повторного використання
+        private static readonly Regex PostalCodeRegex = new Regex(
+            @"(?<!\d)\d{5}(?!\d)", 
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-        // Конструктор приймає текст для обробки
-        public PostalCodeFinder(string text)
+        private readonly string _inputText;
+
+        /// <summary>
+        /// Ініціалізує новий екземпляр класу PostalCodeFinder.
+        /// </summary>
+        /// <param name="inputText">Вхідний текст для пошуку індексів.</param>
+        /// <exception cref="ArgumentNullException">Кидається, якщо inputText дорівнює null.</exception>
+        public PostalCodeFinder(string inputText)
         {
-            _text = text ?? throw new ArgumentNullException(nameof(text), "Текст не може бути порожнім");
+            _inputText = inputText ?? throw new ArgumentNullException(nameof(inputText));
         }
 
-        // Метод для знаходження всіх поштових індексів формату 00000
+        /// <summary>
+        /// Повертає список поштових індексів у форматі 00000.
+        /// </summary>
+        /// <returns>Список знайдених індексів. Якщо збігів немає — порожній список.</returns>
         public List<string> FindPostalCodes()
         {
             var postalCodes = new List<string>();
-
-            // Регулярний вираз для пошуку 5 цифр підряд
-            string pattern = @"\b\d{5}\b";
-            Regex regex = new Regex(pattern);
-
-            MatchCollection matches = regex.Matches(_text);
+            MatchCollection matches = PostalCodeRegex.Matches(_inputText);
 
             foreach (Match match in matches)
             {
@@ -36,24 +45,38 @@ namespace LabWorkRegex
         }
     }
 
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main()
         {
-            // Приклад тексту для пошуку
-            string sampleText = "Мої поштові індекси: 01001, 03022, 12345, а також 67890 і неправильний 1234.";
+            Console.WriteLine("Введіть текст для пошуку поштових індексів:");
+            string? text = Console.ReadLine();
 
-            // Створюємо об'єкт класу PostalCodeFinder
-            PostalCodeFinder finder = new PostalCodeFinder(sampleText);
-
-            // Виконуємо пошук
-            List<string> postalCodes = finder.FindPostalCodes();
-
-            // Виводимо результати
-            Console.WriteLine("Знайдені поштові індекси:");
-            foreach (string code in postalCodes)
+            try
             {
-                Console.WriteLine(code);
+                var finder = new PostalCodeFinder(text ?? string.Empty);
+                List<string> postalCodes = finder.FindPostalCodes();
+
+                if (postalCodes.Count > 0)
+                {
+                    Console.WriteLine("Знайдені поштові індекси:");
+                    foreach (string code in postalCodes)
+                    {
+                        Console.WriteLine(code);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Поштових індексів у форматі 00000 не знайдено.");
+                }
+            }
+            catch (ArgumentNullException ex)
+            {
+                Console.WriteLine($"Помилка: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Непередбачена помилка: {ex.Message}");
             }
         }
     }
