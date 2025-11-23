@@ -1,33 +1,27 @@
 using System;
-using RegularExpressionLab;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
-namespace RegularExpressionLabApp
+namespace RegularExpressionLab
 {
-    class Program
+    public class PostalCodeFinder
     {
-        static void Main(string[] args)
+        // Метод для пошуку поштових індексів формату 00000
+        public List<string> FindPostalCodes(string text)
         {
-            Console.WriteLine("Введіть текст:");
-            string inputText = Console.ReadLine();
+            var postalCodes = new List<string>();
 
-            var finder = new PostalCodeFinder();
-            var foundCodes = finder.FindPostalCodes(inputText);
+            // П'ять цифр поспіль
+            string pattern = @"\b\d{5}\b";
 
-            Console.WriteLine("\nЗнайдені поштові індекси (формат 00000):");
+            MatchCollection matches = Regex.Matches(text, pattern);
 
-            if (foundCodes.Count == 0)
+            foreach (Match match in matches)
             {
-                Console.WriteLine("Нічого не знайдено.");
-            }
-            else
-            {
-                foreach (var code in foundCodes)
-                {
-                    Console.WriteLine(code);
-                }
+                postalCodes.Add(match.Value);
             }
 
-            Console.WriteLine("\nГотово!");
+            return postalCodes;
         }
     }
 }
