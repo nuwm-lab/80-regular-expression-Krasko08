@@ -1,18 +1,46 @@
-﻿using System;
+using System;
+using System.Text.RegularExpressions;
+using System.Collections.Generic;
 
-namespace LabWork
+namespace RegularExpressionLab
 {
-    // Даний проект є шаблоном для виконання лабораторних робіт
-    // з курсу "Об'єктно-орієнтоване програмування та патерни проектування"
-    // Необхідно змінювати і дописувати код лише в цьому проекті
-    // Відео-інструкції щодо роботи з github можна переглянути 
-    // за посиланням https://www.youtube.com/@ViktorZhukovskyy/videos 
+    public class PostalCodeFinder
+    {
+        public List<string> FindPostalCodes(string text)
+        {
+            var postalCodes = new List<string>();
+
+            // Регулярний вираз для індексу формату 00000
+            string pattern = @"\b\d{5}\b";
+
+            MatchCollection matches = Regex.Matches(text, pattern);
+
+            foreach (Match match in matches)
+            {
+                postalCodes.Add(match.Value);
+            }
+
+            return postalCodes;
+        }
+    }
+
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            
-            Console.WriteLine("Hello World!");
+            string inputText = "Мої адреси: 33024, 01001, а це не індекс 123.",
+                   // Для тесту.
+            ;
+
+            var finder = new PostalCodeFinder();
+            var codes = finder.FindPostalCodes(inputText);
+
+            Console.WriteLine("Знайдені індекси:");
+
+            foreach (string code in codes)
+            {
+                Console.WriteLine(code);
+            }
         }
     }
 }
