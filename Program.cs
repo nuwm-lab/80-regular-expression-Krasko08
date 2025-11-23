@@ -5,43 +5,61 @@ using System.Text.RegularExpressions;
 namespace RegularExpressionLab
 {
     /// <summary>
-    /// Клас для пошуку поштових індексів у тексті.
-    /// Використовує регулярні вирази для знаходження індексів у форматі 00000.
+    /// Клас для пошуку шаблонів у тексті.
+    /// Може знаходити поштові індекси, дати, IP-адреси та інші патерни.
     /// </summary>
-    public class PostalCodeFinder
+    public class PatternFinder
     {
-        // Статичний Regex для продуктивності та повторного використання
-        private static readonly Regex PostalCodeRegex = new Regex(
-            @"(?<!\d)\d{5}(?!\d)", 
-            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        // Словник патернів: назва -> регулярний вираз
+        private readonly Dictionary<string, Regex> _patterns;
 
         private readonly string _inputText;
 
         /// <summary>
-        /// Ініціалізує новий екземпляр класу PostalCodeFinder.
+        /// Ініціалізує новий екземпляр класу PatternFinder.
         /// </summary>
-        /// <param name="inputText">Вхідний текст для пошуку індексів.</param>
-        /// <exception cref="ArgumentNullException">Кидається, якщо inputText дорівнює null.</exception>
-        public PostalCodeFinder(string inputText)
+        /// <param name="inputText">Вхідний текст для пошуку.</param>
+        /// <exception cref="ArgumentException">Кидається, якщо рядок порожній або null.</exception>
+        public PatternFinder(string inputText)
         {
-            _inputText = inputText ?? throw new ArgumentNullException(nameof(inputText));
+            if (string.IsNullOrWhiteSpace(inputText))
+            {
+                throw new ArgumentException("Вхідний текст не може бути порожнім.", nameof(inputText));
+            }
+
+            _inputText = inputText;
+
+            // Ініціалізація патернів
+            _patterns = new Dictionary<string, Regex>
+            {
+                { "Поштовий індекс", new Regex(@"(?<!\d)\d{5}(?!\d)", RegexOptions.Compiled | RegexOptions.CultureInvariant) },
+                { "Дата (dd/mm/yyyy)", new Regex(@"\b\d{2}/\d{2}/\d{4}\b", RegexOptions.Compiled | RegexOptions.CultureInvariant) },
+                { "IP-адреса", new Regex(@"\b(?:\d{1,3}\.){3}\d{1,3}\b", RegexOptions.Compiled | RegexOptions.CultureInvariant) }
+            };
         }
 
         /// <summary>
-        /// Повертає список поштових індексів у форматі 00000.
+        /// Пошук усіх збігів для заданих патернів.
         /// </summary>
-        /// <returns>Список знайдених індексів. Якщо збігів немає — порожній список.</returns>
-        public List<string> FindPostalCodes()
+        /// <returns>Словник: назва патерну -> список знайдених збігів.</returns>
+        public Dictionary<string, List<string>> FindPatterns()
         {
-            var postalCodes = new List<string>();
-            MatchCollection matches = PostalCodeRegex.Matches(_inputText);
+            var results = new Dictionary<string, List<string>>();
 
-            foreach (Match match in matches)
+            foreach (var kvp in _patterns)
             {
-                postalCodes.Add(match.Value);
+                var matches = kvp.Value.Matches(_inputText);
+                var found = new List<string>();
+
+                foreach (Match match in matches)
+                {
+                    found.Add(match.Value);
+                }
+
+                results[kvp.Key] = found;
             }
 
-            return postalCodes;
+            return results;
         }
     }
 
@@ -49,28 +67,28 @@ namespace RegularExpressionLab
     {
         private static void Main()
         {
-            Console.WriteLine("Введіть текст для пошуку поштових індексів:");
+            Console.WriteLine("Введіть текст для пошуку шаблонів:");
             string? text = Console.ReadLine();
 
             try
             {
-                var finder = new PostalCodeFinder(text ?? string.Empty);
-                List<string> postalCodes = finder.FindPostalCodes();
+                var finder = new PatternFinder(text ?? string.Empty);
+                var results = finder.FindPatterns();
 
-                if (postalCodes.Count > 0)
+                Console.WriteLine("\nРезультати пошуку:");
+                foreach (var kvp in results)
                 {
-                    Console.WriteLine("Знайдені поштові індекси:");
-                    foreach (string code in postalCodes)
+                    if (kvp.Value.Count > 0)
                     {
-                        Console.WriteLine(code);
+                        Console.WriteLine($"{kvp.Key}: {string.Join(", ", kvp.Value)}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"{kvp.Key}: збігів не знайдено.");
                     }
                 }
-                else
-                {
-                    Console.WriteLine("Поштових індексів у форматі 00000 не знайдено.");
-                }
             }
-            catch (ArgumentNullException ex)
+            catch (ArgumentException ex)
             {
                 Console.WriteLine($"Помилка: {ex.Message}");
             }
