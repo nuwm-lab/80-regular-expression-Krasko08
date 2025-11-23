@@ -2,27 +2,30 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace RegularExpressionLab
+namespace LabWorkRegex
 {
-    // Клас для роботи з поштовими індексами
+    // Клас для пошуку поштових індексів у тексті
     public class PostalCodeFinder
     {
         // Інкапсульоване поле для збереження тексту
-        private readonly string _inputText;
+        private readonly string _text;
 
-        // Конструктор
-        public PostalCodeFinder(string inputText)
+        // Конструктор приймає текст для обробки
+        public PostalCodeFinder(string text)
         {
-            _inputText = inputText;
+            _text = text ?? throw new ArgumentNullException(nameof(text), "Текст не може бути порожнім");
         }
 
-        // Метод для пошуку індексів
+        // Метод для знаходження всіх поштових індексів формату 00000
         public List<string> FindPostalCodes()
         {
             var postalCodes = new List<string>();
-            string pattern = @"\b\d{5}\b"; // регулярний вираз для формату 00000
 
-            MatchCollection matches = Regex.Matches(_inputText, pattern);
+            // Регулярний вираз для пошуку 5 цифр підряд
+            string pattern = @"\b\d{5}\b";
+            Regex regex = new Regex(pattern);
+
+            MatchCollection matches = regex.Matches(_text);
 
             foreach (Match match in matches)
             {
@@ -33,16 +36,20 @@ namespace RegularExpressionLab
         }
     }
 
-    // Тестовий клас програми
-    internal class Program
+    class Program
     {
-        private static void Main()
+        static void Main(string[] args)
         {
-            string text = "Адреси: Київ 01001, Львів 79000, Рівне 33028, а також код 123456 не підходить.";
-            
-            PostalCodeFinder finder = new PostalCodeFinder(text);
+            // Приклад тексту для пошуку
+            string sampleText = "Мої поштові індекси: 01001, 03022, 12345, а також 67890 і неправильний 1234.";
+
+            // Створюємо об'єкт класу PostalCodeFinder
+            PostalCodeFinder finder = new PostalCodeFinder(sampleText);
+
+            // Виконуємо пошук
             List<string> postalCodes = finder.FindPostalCodes();
 
+            // Виводимо результати
             Console.WriteLine("Знайдені поштові індекси:");
             foreach (string code in postalCodes)
             {
