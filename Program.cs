@@ -5,36 +5,59 @@ using System.Text.RegularExpressions;
 namespace RegularExpressionLab
 {
     /// <summary>
-    /// Клас для пошуку поштових індексів у тексті.
-    /// Формат індексу: 5 цифр поспіль.
+    /// Результат пошуку для одного шаблону
     /// </summary>
-    public class PostalCodeFinder
+    public class PatternResult
     {
-        // Статичний компільований регулярний вираз для продуктивності
-        private static readonly Regex _postalRegex = new Regex(
-            @"(?<!\d)\d{5}(?!\d)", 
-            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        public string PatternName { get; set; }
+        public List<string> Matches { get; set; } = new List<string>();
+        public int Count => Matches.Count;
+    }
+
+    /// <summary>
+    /// Клас для пошуку шаблонів у тексті.
+    /// </summary>
+    public class TextPatternFinder
+    {
+        // Статичні компільовані Regex для повторного використання
+        private static readonly Regex _postalRegex = new Regex(@"(?<!\d)\d{5}(?!\d)", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex _dateRegex = new Regex(@"\b\d{2}/\d{2}/\d{4}\b", RegexOptions.Compiled);
+        private static readonly Regex _ipRegex = new Regex(@"\b(?:\d{1,3}\.){3}\d{1,3}\b", RegexOptions.Compiled);
 
         /// <summary>
-        /// Пошук поштових індексів у тексті.
+        /// Пошук кількох типів шаблонів у тексті.
         /// </summary>
         /// <param name="text">Вхідний текст</param>
-        /// <returns>Список знайдених поштових індексів</returns>
-        public List<string> FindPostalCodes(string text)
+        /// <returns>Список результатів пошуку для кожного шаблону</returns>
+        public List<PatternResult> FindPatterns(string text)
         {
+            var results = new List<PatternResult>();
+
             if (string.IsNullOrWhiteSpace(text))
-                return new List<string>(); // Порожній список для null або пустого тексту
+                return results;
 
-            var postalCodes = new List<string>();
-
-            MatchCollection matches = _postalRegex.Matches(text);
-
-            foreach (Match match in matches)
+            // Словник шаблонів
+            var patterns = new Dictionary<string, Regex>
             {
-                postalCodes.Add(match.Value);
+                { "PostalCode", _postalRegex },
+                { "Date (dd/mm/yyyy)", _dateRegex },
+                { "IP Address", _ipRegex }
+            };
+
+            foreach (var kvp in patterns)
+            {
+                var result = new PatternResult { PatternName = kvp.Key };
+                MatchCollection matches = kvp.Value.Matches(text);
+
+                foreach (Match match in matches)
+                {
+                    result.Matches.Add(match.Value);
+                }
+
+                results.Add(result);
             }
 
-            return postalCodes;
+            return results;
         }
     }
 
@@ -42,27 +65,31 @@ namespace RegularExpressionLab
     {
         static void Main()
         {
-            var finder = new PostalCodeFinder();
+            var finder = new TextPatternFinder();
 
-            Console.WriteLine("Введіть текст для пошуку поштових індексів:");
+            Console.WriteLine("Введіть текст для пошуку шаблонів:");
             string input = Console.ReadLine();
 
-            List<string> results = finder.FindPostalCodes(input);
+            var results = finder.FindPatterns(input);
 
-            if (results.Count == 0)
+            foreach (var res in results)
             {
-                Console.WriteLine("Збігів не знайдено.");
-            }
-            else
-            {
-                Console.WriteLine("Знайдені поштові індекси:");
-                foreach (var code in results)
+                Console.WriteLine($"\nШаблон: {res.PatternName}");
+                if (res.Count == 0)
                 {
-                    Console.WriteLine(code);
+                    Console.WriteLine("Збігів не знайдено.");
+                }
+                else
+                {
+                    Console.WriteLine($"Кількість збігів: {res.Count}");
+                    foreach (var match in res.Matches)
+                    {
+                        Console.WriteLine(match);
+                    }
                 }
             }
 
-            Console.WriteLine("Натисніть будь-яку клавішу для виходу...");
+            Console.WriteLine("\nНатисніть будь-яку клавішу для виходу...");
             Console.ReadKey();
         }
     }
