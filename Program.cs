@@ -1,101 +1,41 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace RegularExpressionLab
+namespace LabRegex
 {
-    /// <summary>
-    /// Клас для пошуку шаблонів у тексті.
-    /// Може знаходити поштові індекси, дати, IP-адреси та інші патерни.
-    /// </summary>
-    public class PatternFinder
+    public static class PostalCodeFinder
     {
-        // Словник патернів: назва -> регулярний вираз
-        private readonly Dictionary<string, Regex> _patterns;
-
-        private readonly string _inputText;
+        // Регулярний вираз для пошуку п'ятизначних індексів, які не є частиною довшого числа
+        private static readonly Regex PostalRegex = new Regex(@"(?<!\d)\d{5}(?!\d)",
+                                                              RegexOptions.Compiled);
 
         /// <summary>
-        /// Ініціалізує новий екземпляр класу PatternFinder.
+        /// Повертає список знайдених поштових індексів у вхідному тексті.
         /// </summary>
-        /// <param name="inputText">Вхідний текст для пошуку.</param>
-        /// <exception cref="ArgumentException">Кидається, якщо рядок порожній або null.</exception>
-        public PatternFinder(string inputText)
+        public static List<string> FindPostalCodes(string text, bool distinct = true)
         {
-            if (string.IsNullOrWhiteSpace(inputText))
-            {
-                throw new ArgumentException("Вхідний текст не може бути порожнім.", nameof(inputText));
-            }
+            if (string.IsNullOrEmpty(text))
+                return new List<string>();
 
-            _inputText = inputText;
+            var matches = PostalRegex.Matches(text)
+                                     .Select(m => m.Value);
 
-            // Ініціалізація патернів
-            _patterns = new Dictionary<string, Regex>
-            {
-                { "Поштовий індекс", new Regex(@"(?<!\d)\d{5}(?!\d)", RegexOptions.Compiled | RegexOptions.CultureInvariant) },
-                { "Дата (dd/mm/yyyy)", new Regex(@"\b\d{2}/\d{2}/\d{4}\b", RegexOptions.Compiled | RegexOptions.CultureInvariant) },
-                { "IP-адреса", new Regex(@"\b(?:\d{1,3}\.){3}\d{1,3}\b", RegexOptions.Compiled | RegexOptions.CultureInvariant) }
-            };
+            return distinct ? matches.Distinct().ToList() : matches.ToList();
         }
 
-        /// <summary>
-        /// Пошук усіх збігів для заданих патернів.
-        /// </summary>
-        /// <returns>Словник: назва патерну -> список знайдених збігів.</returns>
-        public Dictionary<string, List<string>> FindPatterns()
+        // Простий демонстраційний Main (можна прибрати для бібліотеки)
+        public static void Main()
         {
-            var results = new Dictionary<string, List<string>>();
+            string sample = @"Приклади: 01001, 02002, адреса: вул. Петра 12, кв. 45, індекс: 03150.
+                              Неправильні: 123456 (6 цифр — не індекс), частина 9123456 також не підходить.
+                              Повтор: 03150 і ще раз 03150. Також 10000-10005 як інтервал.";
 
-            foreach (var kvp in _patterns)
-            {
-                var matches = kvp.Value.Matches(_inputText);
-                var found = new List<string>();
-
-                foreach (Match match in matches)
-                {
-                    found.Add(match.Value);
-                }
-
-                results[kvp.Key] = found;
-            }
-
-            return results;
-        }
-    }
-
-    internal class Program
-    {
-        private static void Main()
-        {
-            Console.WriteLine("Введіть текст для пошуку шаблонів:");
-            string? text = Console.ReadLine();
-
-            try
-            {
-                var finder = new PatternFinder(text ?? string.Empty);
-                var results = finder.FindPatterns();
-
-                Console.WriteLine("\nРезультати пошуку:");
-                foreach (var kvp in results)
-                {
-                    if (kvp.Value.Count > 0)
-                    {
-                        Console.WriteLine($"{kvp.Key}: {string.Join(", ", kvp.Value)}");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"{kvp.Key}: збігів не знайдено.");
-                    }
-                }
-            }
-            catch (ArgumentException ex)
-            {
-                Console.WriteLine($"Помилка: {ex.Message}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Непередбачена помилка: {ex.Message}");
-            }
+            var found = FindPostalCodes(sample);
+            Console.WriteLine(""Знайдені індекси:"");
+            foreach (var idx in found)
+                Console.WriteLine(idx);
         }
     }
 }
